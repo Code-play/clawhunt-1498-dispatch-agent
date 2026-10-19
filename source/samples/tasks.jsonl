@@ -1,0 +1,7 @@
+{"id": "T-1001", "title": "客户查询接口实现", "domain": "backend", "task_type": "api", "priority": 4, "tags": ["customer-portal"], "required_skills": ["api", "db"]}
+{"id": "T-1002", "title": "异步任务队列接入", "domain": "backend", "task_type": "queue", "priority": 3, "tags": [], "required_skills": ["queue"]}
+{"id": "T-1003", "title": "订单明细 ETL", "domain": "data", "task_type": "etl", "priority": 3, "tags": [], "required_skills": ["etl", "sql"]}
+{"id": "T-1004", "title": "生产环境灰度发布", "domain": "ops", "task_type": "deploy", "priority": 5, "tags": ["prod"], "required_skills": ["deploy"]}
+{"id": "T-1005", "title": "审计日志接口补齐", "domain": "backend", "task_type": "api", "priority": 2, "tags": [], "required_skills": ["api"]}
+{"id": "T-1006", "title": "第三方风控规则接入", "domain": "security", "task_type": "audit", "priority": 3, "tags": ["third-party"], "required_skills": ["audit"]}
+{"id": "T-1007", "title": "跨团队协作流程复核", "domain": "backend", "task_type": "review", "priority": 3, "tags": ["cross-team"], "required_skills": ["review"]}

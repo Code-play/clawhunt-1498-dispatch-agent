@@ -1,0 +1,54 @@
+{
+  "schema_version": "1.0",
+  "note": "脱敏/合成团队花名册。只含责任域、技能标签与容量，不含任何真实姓名、账号、联系方式。",
+  "members": [
+    {
+      "id": "M-BE-01",
+      "display": "后端执行人 A",
+      "domains": ["backend"],
+      "skills": ["api", "service", "db"],
+      "capacity": 2,
+      "available": true
+    },
+    {
+      "id": "M-BE-02",
+      "display": "后端执行人 B",
+      "domains": ["backend"],
+      "skills": ["api", "queue"],
+      "capacity": 2,
+      "available": true
+    },
+    {
+      "id": "M-DATA-01",
+      "display": "数据执行人 A",
+      "domains": ["data"],
+      "skills": ["etl", "sql"],
+      "capacity": 1,
+      "available": true
+    },
+    {
+      "id": "M-DATA-02",
+      "display": "数据执行人 B",
+      "domains": ["data"],
+      "skills": ["etl", "schema"],
+      "capacity": 1,
+      "available": true
+    },
+    {
+      "id": "M-OPS-01",
+      "display": "运维执行人 A",
+      "domains": ["ops"],
+      "skills": ["deploy", "monitor"],
+      "capacity": 1,
+      "available": true
+    },
+    {
+      "id": "M-QA-01",
+      "display": "质量执行人 A",
+      "domains": ["qa"],
+      "skills": ["test", "review"],
+      "capacity": 2,
+      "available": true
+    }
+  ]
+}

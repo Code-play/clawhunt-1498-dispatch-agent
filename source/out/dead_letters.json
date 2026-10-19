@@ -1,0 +1,71 @@
+[
+  {
+    "task_id": "T-1001",
+    "title": "客户查询接口实现",
+    "reason": "人工接管超时未处理（触发事件 manual_timeout）",
+    "retry_count": 2,
+    "reassign_count": 3,
+    "last_assignee": null,
+    "trace": [
+      {
+        "kind": "timeout",
+        "from": "ASSIGNED",
+        "to": "RETRYING",
+        "action": "retry_with_backoff",
+        "detail": "执行人未在 SLA 内受理",
+        "at": "2026-01-05T09:12:00Z"
+      },
+      {
+        "kind": "timeout",
+        "from": "RETRYING",
+        "to": "RETRYING",
+        "action": "retry_with_backoff",
+        "detail": "第二次超时",
+        "at": "2026-01-05T09:13:30Z"
+      },
+      {
+        "kind": "timeout",
+        "from": "RETRYING",
+        "to": "REASSIGNED",
+        "action": "reassign_next_candidate",
+        "detail": "第三次超时（重试额度用尽）",
+        "at": "2026-01-05T09:15:00Z"
+      },
+      {
+        "kind": "rejected",
+        "from": "REASSIGNED",
+        "to": "REASSIGNED",
+        "action": "reassign_next_candidate",
+        "detail": "交付被驳回：缺少接口契约",
+        "at": "2026-01-05T09:16:30Z"
+      },
+      {
+        "kind": "member_unavailable",
+        "from": "REASSIGNED",
+        "to": "REASSIGNED",
+        "action": "reassign_excluding_unavailable",
+        "detail": "执行人临时请假",
+        "at": "2026-01-05T09:18:00Z"
+      },
+      {
+        "kind": "rejected",
+        "from": "REASSIGNED",
+        "to": "AWAITING_MANUAL",
+        "action": "escalate_to_human",
+        "detail": "交付再次被驳回",
+        "at": "2026-01-05T09:19:30Z"
+      },
+      {
+        "kind": "manual_timeout",
+        "from": "AWAITING_MANUAL",
+        "to": "DEAD_LETTER",
+        "action": "park_in_dead_letter",
+        "detail": "人工接管 4h 未处理",
+        "at": "2026-01-05T09:21:00Z"
+      }
+    ],
+    "recovery_suggestion": "核对责任域规则表是否缺少可承接该域的成员；补人后从 AWAITING_MANUAL 重新派发。",
+    "next_state": "AWAITING_MANUAL",
+    "inspectable": true
+  }
+]

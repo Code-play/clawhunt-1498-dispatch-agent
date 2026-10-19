@@ -1,0 +1,260 @@
+# 派单 Agent · 一键复跑演示
+配置目录: D:\works\clawhunt-agent\deliverables\1498-dispatch-agent\config
+任务输入: D:\works\clawhunt-agent\deliverables\1498-dispatch-agent\samples\tasks.jsonl（合成/脱敏，7 条）
+团队规模: 6 人；规则 5 条 + 兜底 1 条；状态机事件 6 种
+
+==============================================================================
+1. 派单规则示例（「责任域 → 执行人」规则表）
+==============================================================================
+
+规则ID    优先级    匹配条件 → 分派目标
+------------------------------------------------------------------------------
+R-010   100    域=backend，类型∈['api', 'service'] → 责任域 backend，优先 ['M-BE-01', 'M-BE-02']
+R-011   90     域=backend，类型∈['queue'] → 责任域 backend，优先 ['M-BE-02', 'M-BE-01']
+R-020   80     域=data，类型∈['etl', 'schema'] → 责任域 data，优先 ['M-DATA-01', 'M-DATA-02']
+R-030   70     域=ops，类型∈['deploy', 'monitor']，优先级>=4 → 责任域 ops，优先 ['M-OPS-01']
+R-040   60     域=*，标签∈['cross-team'] → 责任域 qa，优先 ['M-QA-01']
+R-999   0      域=* → 责任域 -，优先 []（兜底）
+
+逐任务命中结果：
+
+[T-1001] 客户查询接口实现（域=backend 类型=api 优先级=4 技能=['api', 'db']）
+  命中规则: R-010 后端接口类任务 → 后端责任域
+  判定过程: 命中 R-010（责任域=backend，任务类型 api ∈ ['api', 'service']）→ 选中 M-BE-01（规则偏好第 1 位(+40)；技能命中 ['api', 'db'](+20)；剩余容量 2(+10)）
+  候选排序:
+    1. M-BE-01（后端执行人 A）score=70 | 规则偏好第 1 位(+40)；技能命中 ['api', 'db'](+20)；剩余容量 2(+10)
+    2. M-BE-02（后端执行人 B）score=55 | 规则偏好第 2 位(+35)；技能命中 ['api'](+10)；剩余容量 2(+10)
+
+[T-1002] 异步任务队列接入（域=backend 类型=queue 优先级=3 技能=['queue']）
+  命中规则: R-011 后端队列类任务 → 后端责任域（队列技能优先）
+  判定过程: 命中 R-011（责任域=backend，任务类型 queue ∈ ['queue']）→ 选中 M-BE-02（规则偏好第 1 位(+40)；技能命中 ['queue'](+10)；剩余容量 2(+10)）
+  候选排序:
+    1. M-BE-02（后端执行人 B）score=60 | 规则偏好第 1 位(+40)；技能命中 ['queue'](+10)；剩余容量 2(+10)
+    2. M-BE-01（后端执行人 A）score=40 | 规则偏好第 2 位(+35)；剩余容量 1(+5)
+
+[T-1003] 订单明细 ETL（域=data 类型=etl 优先级=3 技能=['etl', 'sql']）
+  命中规则: R-020 数据加工类任务 → 数据责任域
+  判定过程: 命中 R-020（责任域=data，任务类型 etl ∈ ['etl', 'schema']）→ 选中 M-DATA-01（规则偏好第 1 位(+40)；技能命中 ['etl', 'sql'](+20)；剩余容量 1(+5)）
+  候选排序:
+    1. M-DATA-01（数据执行人 A）score=65 | 规则偏好第 1 位(+40)；技能命中 ['etl', 'sql'](+20)；剩余容量 1(+5)
+    2. M-DATA-02（数据执行人 B）score=50 | 规则偏好第 2 位(+35)；技能命中 ['etl'](+10)；剩余容量 1(+5)
+
+[T-1004] 生产环境灰度发布（域=ops 类型=deploy 优先级=5 技能=['deploy']）
+  命中规则: R-030 高优先级运维任务 → 运维责任域，无人可用则转人工
+  判定过程: 命中 R-030（责任域=ops，任务类型 deploy ∈ ['deploy', 'monitor']，优先级 5 >= 4）→ 选中 M-OPS-01（规则偏好第 1 位(+40)；技能命中 ['deploy'](+10)；剩余容量 1(+5)）
+  候选排序:
+    1. M-OPS-01（运维执行人 A）score=55 | 规则偏好第 1 位(+40)；技能命中 ['deploy'](+10)；剩余容量 1(+5)
+
+[T-1005] 审计日志接口补齐（域=backend 类型=api 优先级=2 技能=['api']）
+  命中规则: R-010 后端接口类任务 → 后端责任域
+  判定过程: 命中 R-010（责任域=backend，任务类型 api ∈ ['api', 'service']）→ 选中 M-BE-01（规则偏好第 1 位(+40)；技能命中 ['api'](+10)；剩余容量 1(+5)）
+  候选排序:
+    1. M-BE-01（后端执行人 A）score=55 | 规则偏好第 1 位(+40)；技能命中 ['api'](+10)；剩余容量 1(+5)
+    2. M-BE-02（后端执行人 B）score=50 | 规则偏好第 2 位(+35)；技能命中 ['api'](+10)；剩余容量 1(+5)
+
+[T-1006] 第三方风控规则接入（域=security 类型=audit 优先级=3 技能=['audit']）
+  命中规则: R-999 兜底：无规则命中 → 转人工分派
+  判定过程: 命中 R-999（没有任何规则命中 → 使用兜底规则）但责任域 security 下没有可用候选 → 按规则执行 escalate_manual
+  候选排序: 无（已升级人工分派，任务不会被静默丢弃）
+
+[T-1007] 跨团队协作流程复核（域=backend 类型=review 优先级=3 技能=['review']）
+  命中规则: R-040 跨域任务（带 cross-team 标签）→ 质量责任域兜底复核
+  判定过程: 命中 R-040（责任域=backend，标签命中 ['cross-team']）→ 选中 M-QA-01（规则偏好第 1 位(+40)；技能命中 ['review'](+10)；剩余容量 2(+10)）
+  候选排序:
+    1. M-QA-01（质量执行人 A）score=60 | 规则偏好第 1 位(+40)；技能命中 ['review'](+10)；剩余容量 2(+10)
+
+==============================================================================
+2. 恢复规则示例（异常状态机）
+==============================================================================
+
+状态定义：
+  ASSIGNED         已派给某个执行人，等待其受理
+  RETRYING         同一执行人重试中（带退避）
+  REASSIGNED       已改派给下一个候选执行人
+  AWAITING_MANUAL  重试/改派额度用尽，转人工接管（有 SLA）
+  DEAD_LETTER      人工也未处理，进入死信区；记录可检查，且带有明确的下一状态
+  DONE             任务完成，释放执行人容量
+
+迁移表（异常 → 迁移 → 恢复动作）：
+
+事件                   允许的当前状态                            目标状态             动作
+----------------------------------------------------------------------------------------------------
+timeout              ASSIGNED,RETRYING                  RETRYING         retry_with_backoff
+rejected             ASSIGNED,RETRYING,REASSIGNED       REASSIGNED       reassign_next_candidate
+member_unavailable   ASSIGNED,RETRYING,REASSIGNED       REASSIGNED       reassign_excluding_unavailable
+retry_exhausted      RETRYING,REASSIGNED                AWAITING_MANUAL  escalate_to_human
+manual_timeout       AWAITING_MANUAL                    DEAD_LETTER      park_in_dead_letter
+completed            ASSIGNED,RETRYING,REASSIGNED,AWAITING_MANUAL DONE             release_capacity
+
+异常演练（确定性脚本，逐步打印状态迁移与恢复动作）：
+
+[T-1001] 事件 timeout：执行人未在 SLA 内受理
+  ASSIGNED(M-BE-01) --timeout--> RETRYING(M-BE-01)
+  恢复动作: retry_with_backoff｜执行人未在 SLA 内受理
+  附加信息: {"retry_count": 1, "backoff_seconds": 30}
+
+[T-1001] 事件 timeout：第二次超时
+  RETRYING(M-BE-01) --timeout--> RETRYING(M-BE-01)
+  恢复动作: retry_with_backoff｜第二次超时
+  附加信息: {"retry_count": 2, "backoff_seconds": 120}
+
+[T-1001] 事件 timeout：第三次超时（重试额度用尽）
+  RETRYING(M-BE-01) --timeout--> REASSIGNED(M-BE-02)
+  恢复动作: reassign_next_candidate｜第三次超时（重试额度用尽）
+  附加信息: {"reassigned_to": "M-BE-02", "candidate_count": 1}
+
+[T-1001] 事件 rejected：交付被驳回：缺少接口契约
+  REASSIGNED(M-BE-02) --rejected--> REASSIGNED(M-BE-01)
+  恢复动作: reassign_next_candidate｜交付被驳回：缺少接口契约
+  附加信息: {"reassigned_to": "M-BE-01", "candidate_count": 1}
+
+[T-1001] 事件 member_unavailable：执行人临时请假
+  REASSIGNED(M-BE-01) --member_unavailable--> REASSIGNED(M-BE-02)
+  恢复动作: reassign_excluding_unavailable｜执行人临时请假
+  附加信息: {"reassigned_to": "M-BE-02", "candidate_count": 1}
+
+[T-1001] 事件 rejected：交付再次被驳回
+  REASSIGNED(M-BE-02) --rejected--> AWAITING_MANUAL(None)
+  恢复动作: escalate_to_human｜交付再次被驳回
+  附加信息: {"sla_hours": 4}
+
+[T-1001] 事件 manual_timeout：人工接管 4h 未处理
+  AWAITING_MANUAL(None) --manual_timeout--> DEAD_LETTER(None)
+  恢复动作: park_in_dead_letter｜人工接管 4h 未处理
+  附加信息: {"inspectable": true, "next_state": "AWAITING_MANUAL"}
+
+[T-1003] 事件 rejected：口径不符，驳回
+  ASSIGNED(M-DATA-01) --rejected--> REASSIGNED(M-DATA-02)
+  恢复动作: reassign_next_candidate｜口径不符，驳回
+  附加信息: {"reassigned_to": "M-DATA-02", "candidate_count": 1}
+
+[T-1003] 事件 completed：返工后通过
+  REASSIGNED(M-DATA-02) --completed--> DONE(M-DATA-02)
+  恢复动作: release_capacity｜返工后通过
+
+[T-1004] 事件 member_unavailable：唯一运维执行人不可用
+  ASSIGNED(M-OPS-01) --member_unavailable--> AWAITING_MANUAL(None)
+  恢复动作: escalate_to_human｜唯一运维执行人不可用
+  附加信息: {"candidate_count": 0}
+
+终态汇总：
+  T-1001: state=DEAD_LETTER assignee=None retry=2 reassign=3
+  T-1002: state=ASSIGNED assignee=M-BE-02 retry=0 reassign=0
+  T-1003: state=DONE assignee=M-DATA-02 retry=0 reassign=1
+  T-1004: state=AWAITING_MANUAL assignee=None retry=0 reassign=1
+  T-1005: state=ASSIGNED assignee=M-BE-01 retry=0 reassign=0
+  T-1006: state=AWAITING_MANUAL assignee=None retry=0 reassign=0
+  T-1007: state=ASSIGNED assignee=M-QA-01 retry=0 reassign=0
+
+==============================================================================
+3. 执行轨迹（完整一次）
+==============================================================================
+
+| seq | step       | at                   | task   | what                                                                         |
+|-----|------------|----------------------|--------|------------------------------------------------------------------------------|
+| 1   | dispatch   | 2026-01-05T09:00:00Z | T-1001 | 派单 规则 R-010 → M-BE-01                                                        |
+| 2   | dispatch   | 2026-01-05T09:01:30Z | T-1002 | 派单 规则 R-011 → M-BE-02                                                        |
+| 3   | dispatch   | 2026-01-05T09:03:00Z | T-1003 | 派单 规则 R-020 → M-DATA-01                                                      |
+| 4   | dispatch   | 2026-01-05T09:04:30Z | T-1004 | 派单 规则 R-030 → M-OPS-01                                                       |
+| 5   | dispatch   | 2026-01-05T09:06:00Z | T-1005 | 派单 规则 R-010 → M-BE-01                                                        |
+| 6   | dispatch   | 2026-01-05T09:07:30Z | T-1006 | 派单 规则 R-999 → 无候选(升级人工)                                                      |
+| 7   | escalation | 2026-01-05T09:09:00Z | T-1006 | 无候选，按规则 R-999 执行 security 域升级                                                |
+| 8   | dispatch   | 2026-01-05T09:10:30Z | T-1007 | 派单 规则 R-040 → M-QA-01                                                        |
+| 9   | recovery   | 2026-01-05T09:12:00Z | T-1001 | timeout: ASSIGNED → RETRYING / retry_with_backoff                            |
+| 10  | recovery   | 2026-01-05T09:13:30Z | T-1001 | timeout: RETRYING → RETRYING / retry_with_backoff                            |
+| 11  | dispatch   | 2026-01-05T09:15:00Z | T-1001 | 改派 规则 R-010 → M-BE-02                                                        |
+| 12  | recovery   | 2026-01-05T09:15:00Z | T-1001 | timeout: RETRYING → REASSIGNED / reassign_next_candidate                     |
+| 13  | dispatch   | 2026-01-05T09:16:30Z | T-1001 | 改派 规则 R-010 → M-BE-01                                                        |
+| 14  | recovery   | 2026-01-05T09:16:30Z | T-1001 | rejected: REASSIGNED → REASSIGNED / reassign_next_candidate                  |
+| 15  | dispatch   | 2026-01-05T09:18:00Z | T-1001 | 改派 规则 R-010 → M-BE-02                                                        |
+| 16  | recovery   | 2026-01-05T09:18:00Z | T-1001 | member_unavailable: REASSIGNED → REASSIGNED / reassign_excluding_unavailable |
+| 17  | recovery   | 2026-01-05T09:19:30Z | T-1001 | rejected: REASSIGNED → AWAITING_MANUAL / escalate_to_human                   |
+| 18  | recovery   | 2026-01-05T09:21:00Z | T-1001 | manual_timeout: AWAITING_MANUAL → DEAD_LETTER / park_in_dead_letter          |
+| 19  | dispatch   | 2026-01-05T09:22:30Z | T-1003 | 改派 规则 R-020 → M-DATA-02                                                      |
+| 20  | recovery   | 2026-01-05T09:22:30Z | T-1003 | rejected: ASSIGNED → REASSIGNED / reassign_next_candidate                    |
+| 21  | recovery   | 2026-01-05T09:24:00Z | T-1003 | completed: REASSIGNED → DONE / release_capacity                              |
+| 22  | dispatch   | 2026-01-05T09:25:30Z | T-1004 | 改派 规则 R-030 → 无候选(升级人工)                                                      |
+| 23  | recovery   | 2026-01-05T09:25:30Z | T-1004 | member_unavailable: ASSIGNED → AWAITING_MANUAL / escalate_to_human           |
+
+轨迹条目统计: {"dispatch": 12, "escalation": 1, "recovery": 10, "total": 23}
+
+死信区记录（可检查，含恢复建议与下一状态）：
+[
+  {
+    "task_id": "T-1001",
+    "title": "客户查询接口实现",
+    "reason": "人工接管超时未处理（触发事件 manual_timeout）",
+    "retry_count": 2,
+    "reassign_count": 3,
+    "last_assignee": null,
+    "trace": [
+      {
+        "kind": "timeout",
+        "from": "ASSIGNED",
+        "to": "RETRYING",
+        "action": "retry_with_backoff",
+        "detail": "执行人未在 SLA 内受理",
+        "at": "2026-01-05T09:12:00Z"
+      },
+      {
+        "kind": "timeout",
+        "from": "RETRYING",
+        "to": "RETRYING",
+        "action": "retry_with_backoff",
+        "detail": "第二次超时",
+        "at": "2026-01-05T09:13:30Z"
+      },
+      {
+        "kind": "timeout",
+        "from": "RETRYING",
+        "to": "REASSIGNED",
+        "action": "reassign_next_candidate",
+        "detail": "第三次超时（重试额度用尽）",
+        "at": "2026-01-05T09:15:00Z"
+      },
+      {
+        "kind": "rejected",
+        "from": "REASSIGNED",
+        "to": "REASSIGNED",
+        "action": "reassign_next_candidate",
+        "detail": "交付被驳回：缺少接口契约",
+        "at": "2026-01-05T09:16:30Z"
+      },
+      {
+        "kind": "member_unavailable",
+        "from": "REASSIGNED",
+        "to": "REASSIGNED",
+        "action": "reassign_excluding_unavailable",
+        "detail": "执行人临时请假",
+        "at": "2026-01-05T09:18:00Z"
+      },
+      {
+        "kind": "rejected",
+        "from": "REASSIGNED",
+        "to": "AWAITING_MANUAL",
+        "action": "escalate_to_human",
+        "detail": "交付再次被驳回",
+        "at": "2026-01-05T09:19:30Z"
+      },
+      {
+        "kind": "manual_timeout",
+        "from": "AWAITING_MANUAL",
+        "to": "DEAD_LETTER",
+        "action": "park_in_dead_letter",
+        "detail": "人工接管 4h 未处理",
+        "at": "2026-01-05T09:21:00Z"
+      }
+    ],
+    "recovery_suggestion": "核对责任域规则表是否缺少可承接该域的成员；补人后从 AWAITING_MANUAL 重新派发。",
+    "next_state": "AWAITING_MANUAL",
+    "inspectable": true
+  }
+]
+
+==============================================================================
+产物
+==============================================================================
+  D:\works\clawhunt-agent\deliverables\1498-dispatch-agent\out\dispatch_trace.jsonl   （执行轨迹 JSONL，23 条）
+  D:\works\clawhunt-agent\deliverables\1498-dispatch-agent\out\dead_letters.json   （死信记录 1 条）
+  D:\works\clawhunt-agent\deliverables\1498-dispatch-agent\out\dispatch_report.md   （Markdown 报告）
+  D:\works\clawhunt-agent\deliverables\1498-dispatch-agent\out\expected_output.txt   （本文件，用于一键复跑比对）

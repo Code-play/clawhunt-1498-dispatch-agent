@@ -1,0 +1,73 @@
+{
+  "schema_version": "1.0",
+  "note": "异常恢复策略：把「超时 / 驳回 / 人员不可用」三类异常描述为状态机，每个异常必须落到一个有名字的下一状态，任务不允许静默消失。",
+  "states": {
+    "ASSIGNED": "已派给某个执行人，等待其受理",
+    "RETRYING": "同一执行人重试中（带退避）",
+    "REASSIGNED": "已改派给下一个候选执行人",
+    "AWAITING_MANUAL": "重试/改派额度用尽，转人工接管（有 SLA）",
+    "DEAD_LETTER": "人工也未处理，进入死信区；记录可检查，且带有明确的下一状态",
+    "DONE": "任务完成，释放执行人容量"
+  },
+  "limits": {
+    "max_retries": 2,
+    "max_reassigns": 2,
+    "backoff_seconds": [30, 120],
+    "manual_sla_hours": 4
+  },
+  "transitions": [
+    {
+      "on": "timeout",
+      "from": ["ASSIGNED", "RETRYING"],
+      "to": "RETRYING",
+      "action": "retry_with_backoff",
+      "when": "retry_count < max_retries",
+      "otherwise": "REASSIGNED",
+      "otherwise_action": "reassign_next_candidate"
+    },
+    {
+      "on": "rejected",
+      "from": ["ASSIGNED", "RETRYING", "REASSIGNED"],
+      "to": "REASSIGNED",
+      "action": "reassign_next_candidate",
+      "when": "reassign_count < max_reassigns",
+      "otherwise": "AWAITING_MANUAL",
+      "otherwise_action": "escalate_to_human"
+    },
+    {
+      "on": "member_unavailable",
+      "from": ["ASSIGNED", "RETRYING", "REASSIGNED"],
+      "to": "REASSIGNED",
+      "action": "reassign_excluding_unavailable",
+      "when": "there_is_another_available_candidate",
+      "otherwise": "AWAITING_MANUAL",
+      "otherwise_action": "escalate_to_human"
+    },
+    {
+      "on": "retry_exhausted",
+      "from": ["RETRYING", "REASSIGNED"],
+      "to": "AWAITING_MANUAL",
+      "action": "escalate_to_human",
+      "sla_hours": 4
+    },
+    {
+      "on": "manual_timeout",
+      "from": ["AWAITING_MANUAL"],
+      "to": "DEAD_LETTER",
+      "action": "park_in_dead_letter",
+      "next_state": "AWAITING_MANUAL",
+      "inspectable": true
+    },
+    {
+      "on": "completed",
+      "from": ["ASSIGNED", "RETRYING", "REASSIGNED", "AWAITING_MANUAL"],
+      "to": "DONE",
+      "action": "release_capacity"
+    }
+  ],
+  "invariants": [
+    "每个异常事件都必须在 transitions 里找到一条 from 命中的迁移",
+    "进入 DEAD_LETTER 的记录必须含：任务、原因、重试次数、改派次数、完整轨迹、恢复建议、下一状态",
+    "AWAITING_MANUAL 必须有 SLA 小时数，超时后自动进入 DEAD_LETTER 而不是消失"
+  ]
+}

@@ -1,0 +1,292 @@
+{
+  "order": 1498,
+  "generated_at": "2026-10-19T03:23:02.884598+00:00",
+  "checks_total": 47,
+  "checks_passed": 47,
+  "checks_failed": 0,
+  "all_passed": true,
+  "checks": [
+    {
+      "name": "团队花名册加载",
+      "expected": ">=4 人",
+      "actual": "6",
+      "passed": true
+    },
+    {
+      "name": "规则表加载",
+      "expected": ">=3 条",
+      "actual": "5",
+      "passed": true
+    },
+    {
+      "name": "规则按优先级降序",
+      "expected": "降序",
+      "actual": "[100, 90, 80, 70, 60]",
+      "passed": true
+    },
+    {
+      "name": "兜底规则存在",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "恢复策略含全部状态",
+      "expected": ">=5 个",
+      "actual": "6",
+      "passed": true
+    },
+    {
+      "name": "恢复策略含额度限制",
+      "expected": "max_retries/max_reassigns/manual_sla_hours",
+      "actual": "manual_sla_hours,max_reassigns,max_retries",
+      "passed": true
+    },
+    {
+      "name": "T-1001 命中规则",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1001 判定可解释",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1002 命中规则",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1002 判定可解释",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1003 命中规则",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1003 判定可解释",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1004 命中规则",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1004 判定可解释",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1005 命中规则",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1005 判定可解释",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1006 命中规则",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1006 判定可解释",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1007 命中规则",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "T-1007 判定可解释",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "无匹配任务走兜底规则",
+      "expected": "R-999",
+      "actual": "R-999",
+      "passed": true
+    },
+    {
+      "name": "无候选任务被升级而非丢弃",
+      "expected": "T-1006",
+      "actual": "T-1006",
+      "passed": true
+    },
+    {
+      "name": "技能命中压过偏好位次",
+      "expected": "M-BE-02 第一",
+      "actual": "M-BE-02",
+      "passed": true
+    },
+    {
+      "name": "候选排序给出理由",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "容量满后轮到下一人",
+      "expected": "M-DATA-02",
+      "actual": "M-DATA-02",
+      "passed": true
+    },
+    {
+      "name": "超时→退避重试",
+      "expected": "retry_with_backoff",
+      "actual": "retry_with_backoff",
+      "passed": true
+    },
+    {
+      "name": "退避第一档 30s",
+      "expected": "30",
+      "actual": "30",
+      "passed": true
+    },
+    {
+      "name": "退避第二档 120s",
+      "expected": "120",
+      "actual": "120",
+      "passed": true
+    },
+    {
+      "name": "重试额度用尽→改派",
+      "expected": "REASSIGNED",
+      "actual": "REASSIGNED",
+      "passed": true
+    },
+    {
+      "name": "回归：改派释放原执行人容量",
+      "expected": "0",
+      "actual": "0",
+      "passed": true
+    },
+    {
+      "name": "驳回额度用尽→转人工",
+      "expected": "AWAITING_MANUAL",
+      "actual": "AWAITING_MANUAL",
+      "passed": true
+    },
+    {
+      "name": "转人工带 SLA",
+      "expected": "4",
+      "actual": "4",
+      "passed": true
+    },
+    {
+      "name": "人工超时→死信区",
+      "expected": "DEAD_LETTER",
+      "actual": "DEAD_LETTER",
+      "passed": true
+    },
+    {
+      "name": "死信记录可检查",
+      "expected": "True",
+      "actual": "True",
+      "passed": true
+    },
+    {
+      "name": "死信记录字段齐全",
+      "expected": "task_id,reason,retry_count,reassign_count,trace,recovery_suggestion,next_state",
+      "actual": "task_id,reason,retry_count,reassign_count,trace,recovery_suggestion,next_state",
+      "passed": true
+    },
+    {
+      "name": "不可用且有替代→改派",
+      "expected": "REASSIGNED",
+      "actual": "REASSIGNED",
+      "passed": true
+    },
+    {
+      "name": "不可用且无替代→转人工",
+      "expected": "AWAITING_MANUAL",
+      "actual": "AWAITING_MANUAL",
+      "passed": true
+    },
+    {
+      "name": "未定义事件抛错（不静默吞掉）",
+      "expected": "RecoveryError",
+      "actual": "RecoveryError",
+      "passed": true
+    },
+    {
+      "name": "完成→DONE 并释放容量",
+      "expected": "DONE/0",
+      "actual": "DONE/0",
+      "passed": true
+    },
+    {
+      "name": "轨迹为可解析 JSONL",
+      "expected": "2",
+      "actual": "2",
+      "passed": true
+    },
+    {
+      "name": "seq 连续",
+      "expected": "[1,2]",
+      "actual": "[1, 2]",
+      "passed": true
+    },
+    {
+      "name": "时间戳单调不减",
+      "expected": "非递减",
+      "actual": "2026-01-05T09:00:00Z,2026-01-05T09:01:30Z",
+      "passed": true
+    },
+    {
+      "name": "demo 轨迹时间戳单调不减",
+      "expected": "非递减",
+      "actual": "23 条",
+      "passed": true
+    },
+    {
+      "name": "demo 轨迹含三类步骤",
+      "expected": "dispatch/escalation/recovery",
+      "actual": "dispatch,escalation,recovery",
+      "passed": true
+    },
+    {
+      "name": "demo 复跑退出码",
+      "expected": "0",
+      "actual": "0",
+      "passed": true
+    },
+    {
+      "name": "两次运行产物逐字节一致",
+      "expected": "哈希相同",
+      "actual": "dispatch_trace.jsonl:同,expected_output.txt:同",
+      "passed": true
+    },
+    {
+      "name": "单元测试全部通过",
+      "expected": "returncode 0",
+      "actual": "0",
+      "passed": true
+    }
+  ]
+}

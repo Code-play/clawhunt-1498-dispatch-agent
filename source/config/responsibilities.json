@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "note": "「责任域 → 执行人」规则表。规则按 priority 从大到小匹配，第一条命中即生效；没有任何规则命中时走 default_rule。",
+  "match_fields": {
+    "domain": "任务的责任域，必须与成员 domains 之一对应",
+    "task_type_in": "任务类型白名单，空数组表示不限",
+    "priority_at_least": "任务优先级下限（1=低，5=高），缺省不限",
+    "tags_any": "任务标签命中任意一个即算命中，空数组表示不限"
+  },
+  "rules": [
+    {
+      "id": "R-010",
+      "name": "后端接口类任务 → 后端责任域",
+      "priority": 100,
+      "when": { "domain": "backend", "task_type_in": ["api", "service"], "priority_at_least": null, "tags_any": [] },
+      "assign_to": { "domain_owner": "backend", "preferred": ["M-BE-01", "M-BE-02"] },
+      "on_no_candidate": "escalate_manual"
+    },
+    {
+      "id": "R-011",
+      "name": "后端队列类任务 → 后端责任域（队列技能优先）",
+      "priority": 90,
+      "when": { "domain": "backend", "task_type_in": ["queue"], "priority_at_least": null, "tags_any": [] },
+      "assign_to": { "domain_owner": "backend", "preferred": ["M-BE-02", "M-BE-01"] },
+      "on_no_candidate": "escalate_manual"
+    },
+    {
+      "id": "R-020",
+      "name": "数据加工类任务 → 数据责任域",
+      "priority": 80,
+      "when": { "domain": "data", "task_type_in": ["etl", "schema"], "priority_at_least": null, "tags_any": [] },
+      "assign_to": { "domain_owner": "data", "preferred": ["M-DATA-01", "M-DATA-02"] },
+      "on_no_candidate": "escalate_manual"
+    },
+    {
+      "id": "R-030",
+      "name": "高优先级运维任务 → 运维责任域，无人可用则转人工",
+      "priority": 70,
+      "when": { "domain": "ops", "task_type_in": ["deploy", "monitor"], "priority_at_least": 4, "tags_any": [] },
+      "assign_to": { "domain_owner": "ops", "preferred": ["M-OPS-01"] },
+      "on_no_candidate": "escalate_manual"
+    },
+    {
+      "id": "R-040",
+      "name": "跨域任务（带 cross-team 标签）→ 质量责任域兜底复核",
+      "priority": 60,
+      "when": { "domain": "*", "task_type_in": [], "priority_at_least": null, "tags_any": ["cross-team"] },
+      "assign_to": { "domain_owner": "qa", "preferred": ["M-QA-01"] },
+      "on_no_candidate": "escalate_manual"
+    }
+  ],
+  "default_rule": {
+    "id": "R-999",
+    "name": "兜底：无规则命中 → 转人工分派",
+    "priority": 0,
+    "when": { "domain": "*", "task_type_in": [], "priority_at_least": null, "tags_any": [] },
+    "assign_to": { "domain_owner": null, "preferred": [] },
+    "on_no_candidate": "escalate_manual"
+  }
+}
